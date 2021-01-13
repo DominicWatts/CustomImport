@@ -1,8 +1,9 @@
 {
     "name": "dominicwatts/customimport",
-    "description": "",
+    "description": "Quick custom import to take SKU and price - using built-in Magento 2 import logic",
     "type": "magento2-module",
     "license": "OSL-3.0",
+    "version": "1.0.0",
     "authors": [
         {
             "email": "dominic@xigen.co.uk",
@@ -10,7 +11,17 @@
         }
     ],
     "minimum-stability": "dev",
-    "require": {},
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://repo.magento.com/"
+        }
+    ],
+    "require": {
+        "magento/framework": "*",
+        "php": ">=7.0.0",
+        "magento/module-import-export": "*"
+    },
     "autoload": {
         "psr-4": {
             "Xigen\\CustomImport\\": ""
