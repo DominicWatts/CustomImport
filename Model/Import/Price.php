@@ -17,6 +17,7 @@ use Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingErrorAggregatorI
 use Magento\ImportExport\Model\ResourceModel\Helper;
 use Magento\ImportExport\Model\ResourceModel\Import\Data;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class Courses
@@ -24,7 +25,6 @@ use Magento\Catalog\Api\ProductRepositoryInterface;
 class Price extends AbstractEntity
 {
     const ENTITY_CODE = 'xigen_price_import';
-    const TABLE = 'catalog_product_entity';
     const ENTITY_ID_COLUMN = 'sku';
 
     /**
@@ -69,14 +69,19 @@ class Price extends AbstractEntity
     protected $productRepositoryInterface;
 
     /**
-     * Courses constructor.
-     *
-     * @param JsonHelper $jsonHelper
-     * @param ImportHelper $importExportData
-     * @param Data $importData
-     * @param ResourceConnection $resource
-     * @param Helper $resourceHelper
-     * @param ProcessingErrorAggregatorInterface $errorAggregator
+     * @var \Psr\Log\LoggerInterface
+     */
+    protected $logger;
+
+    /**
+     * @param \Magento\Framework\Json\Helper\Data $jsonHelper
+     * @param \Magento\ImportExport\Helper\Data $importExportData
+     * @param \Magento\ImportExport\Model\ResourceModel\Import\Data $importData
+     * @param \Magento\Framework\App\ResourceConnection $resource
+     * @param \Magento\ImportExport\Model\ResourceModel\Helper $resourceHelper
+     * @param \Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingErrorAggregatorInterface $errorAggregator
+     * @param \Magento\Catalog\Api\ProductRepositoryInterface $productRepositoryInterface
+     * @param \Psr\Log\LoggerInterface $logger
      */
     public function __construct(
         JsonHelper $jsonHelper,
@@ -85,7 +90,8 @@ class Price extends AbstractEntity
         ResourceConnection $resource,
         Helper $resourceHelper,
         ProcessingErrorAggregatorInterface $errorAggregator,
-        ProductRepositoryInterface $productRepositoryInterface
+        ProductRepositoryInterface $productRepositoryInterface,
+        LoggerInterface $logger
     ) {
         $this->jsonHelper = $jsonHelper;
         $this->_importExportData = $importExportData;
@@ -95,6 +101,7 @@ class Price extends AbstractEntity
         $this->connection = $resource->getConnection(ResourceConnection::DEFAULT_CONNECTION);
         $this->errorAggregator = $errorAggregator;
         $this->productRepositoryInterface = $productRepositoryInterface;
+        $this->logger = $logger;
         $this->initMessageTemplates();
     }
 
@@ -227,7 +234,6 @@ class Price extends AbstractEntity
     private function saveEntityFinish(array $entityData): bool
     {
         if ($entityData) {
-            $tableName = $this->connection->getTableName(static::TABLE);
             $rows = [];
 
             foreach ($entityData as $entityRows) {
@@ -249,9 +255,8 @@ class Price extends AbstractEntity
                 }
                 return true;
             }
-
-            return false;
         }
+        return false;
     }
 
     /**
