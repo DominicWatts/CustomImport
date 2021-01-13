@@ -1,0 +1,22 @@
+{
+    "name": "dominicwatts/customimport",
+    "description": "",
+    "type": "magento2-module",
+    "license": "OSL-3.0",
+    "authors": [
+        {
+            "email": "dominic@xigen.co.uk",
+            "name": "Dominic Xigen"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Xigen\\CustomImport\\": ""
+        },
+        "files": [
+            "registration.php"
+        ]
+    }
+}
