@@ -1,4 +1,4 @@
-# Xigen Custom Import
+# Magento 2 Custom Import Entity Type
 
 ![phpcs](https://github.com/DominicWatts/CustomImport/workflows/phpcs/badge.svg)
 
