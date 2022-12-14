@@ -145,7 +145,6 @@ class Price extends AbstractEntity
 
     /**
      * Row validation
-     * phpcs:ignore Magento2.Functions.DiscouragedFunction
      * @param array $rowData
      * @param int $rowNum
      * @return bool
@@ -156,6 +155,7 @@ class Price extends AbstractEntity
         $price = $rowData['price'] ?? null;
         $storeId = $rowData['store_id'] ?? null;
 
+        // phpcs:disable 
         if (is_null($sku)) {
             $this->addRowError('SkuIsRequred', $rowNum);
         }
@@ -167,6 +167,7 @@ class Price extends AbstractEntity
         if (is_null($storeId)) {
             $this->addRowError('StoreIdIsRequired', $rowNum);
         }
+        // phpcs:enable 
 
         if (isset($this->_validatedRows[$rowNum])) {
             return !$this->getErrorAggregator()->isRowInvalid($rowNum);
