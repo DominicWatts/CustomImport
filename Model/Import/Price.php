@@ -4,9 +4,12 @@
  * See COPYING.txt for license details.
  */
 
-namespace Xigen\CustomImport\Model\Import;
+namespace PixieMedia\CustomImport\Model\Import;
 
 use Exception;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Action;
+use Magento\Catalog\Model\ProductFactory;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\Json\Helper\Data as JsonHelper;
@@ -16,7 +19,6 @@ use Magento\ImportExport\Model\Import\Entity\AbstractEntity;
 use Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingErrorAggregatorInterface;
 use Magento\ImportExport\Model\ResourceModel\Helper;
 use Magento\ImportExport\Model\ResourceModel\Import\Data;
-use Magento\Catalog\Api\ProductRepositoryInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -24,7 +26,7 @@ use Psr\Log\LoggerInterface;
  */
 class Price extends AbstractEntity
 {
-    const ENTITY_CODE = 'xigen_price_import';
+    const ENTITY_CODE = 'pixie_price_import';
     const ENTITY_ID_COLUMN = 'sku';
 
     /**
@@ -42,7 +44,8 @@ class Price extends AbstractEntity
      */
     protected $_permanentAttributes = [
         'sku',
-        'price'
+        'price',
+        'store_id'
     ];
 
     /**
@@ -50,7 +53,8 @@ class Price extends AbstractEntity
      */
     protected $validColumnNames = [
         'sku',
-        'price'
+        'price',
+        'store_id'
     ];
 
     /**
@@ -74,6 +78,16 @@ class Price extends AbstractEntity
     protected $logger;
 
     /**
+     * @var \Magento\Catalog\Model\ProductFactory
+     */
+    protected $productFactory;
+
+    /**
+     * @var \Magento\Catalog\Model\Product\Action
+     */
+    protected $productAction;
+
+    /**
      * @param \Magento\Framework\Json\Helper\Data $jsonHelper
      * @param \Magento\ImportExport\Helper\Data $importExportData
      * @param \Magento\ImportExport\Model\ResourceModel\Import\Data $importData
@@ -82,6 +96,8 @@ class Price extends AbstractEntity
      * @param \Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingErrorAggregatorInterface $errorAggregator
      * @param \Magento\Catalog\Api\ProductRepositoryInterface $productRepositoryInterface
      * @param \Psr\Log\LoggerInterface $logger
+     * @param \Magento\Catalog\Model\ProductFactory $productFactory
+     * @param \Magento\Catalog\Model\Product\Action $action
      */
     public function __construct(
         JsonHelper $jsonHelper,
@@ -91,7 +107,9 @@ class Price extends AbstractEntity
         Helper $resourceHelper,
         ProcessingErrorAggregatorInterface $errorAggregator,
         ProductRepositoryInterface $productRepositoryInterface,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        ProductFactory $productFactory,
+        Action $action
     ) {
         $this->jsonHelper = $jsonHelper;
         $this->_importExportData = $importExportData;
@@ -102,6 +120,8 @@ class Price extends AbstractEntity
         $this->errorAggregator = $errorAggregator;
         $this->productRepositoryInterface = $productRepositoryInterface;
         $this->logger = $logger;
+        $this->productFactory = $productFactory;
+        $this->productAction  = $action;
         $this->initMessageTemplates();
     }
 
@@ -131,16 +151,23 @@ class Price extends AbstractEntity
      */
     public function validateRow(array $rowData, $rowNum): bool
     {
-        $sku = $rowData['sku'] ?? '';
-        $price = $rowData['price'] ?? '';
-        
-        if (!$sku) {
+        $sku = $rowData['sku'] ?? null;
+        $price = $rowData['price'] ?? null;
+        $storeId = $rowData['store_id'] ?? null;
+
+        // phpcs:disable 
+        if (is_null($sku)) {
             $this->addRowError('SkuIsRequred', $rowNum);
         }
 
-        if (!$price) {
+        if (is_null($price)) {
             $this->addRowError('PriceIsRequired', $rowNum);
         }
+
+        if (is_null($storeId)) {
+            $this->addRowError('StoreIdIsRequired', $rowNum);
+        }
+        // phpcs:enable 
 
         if (isset($this->_validatedRows[$rowNum])) {
             return !$this->getErrorAggregator()->isRowInvalid($rowNum);
@@ -164,8 +191,12 @@ class Price extends AbstractEntity
             'PriceIsRequired',
             __('The price is required.')
         );
+        $this->addMessageTemplate(
+            'StoreIdIsRequired',
+            __('The store ID is required.')
+        );
     }
-    
+
     /**
      * Import data
      * @return bool
@@ -220,9 +251,8 @@ class Price extends AbstractEntity
                 $this->countItemsCreated += (int) !isset($row[static::ENTITY_ID_COLUMN]);
                 $this->countItemsUpdated += (int) isset($row[static::ENTITY_ID_COLUMN]);
             }
-            
+
             $this->saveEntityFinish($entityList);
-            
         }
     }
 
@@ -244,13 +274,12 @@ class Price extends AbstractEntity
 
             if ($rows) {
                 foreach ($rows as $row) {
-                    if ($product = $this->getBySku($row['sku'])) {
-                        $product->setPrice($row['price']);
-                        try {
-                            $product = $this->productRepositoryInterface->save($product);
-                        } catch (\Exception $e) {
-                            $this->logger->critical($e);
-                        }
+                    if ($product = $this->getBySku($row['sku'], false)) {
+                        $this->productAction->updateAttributes(
+                            [$product->getId()],
+                            ['price' => $row['price']],
+                            $row['store_id']
+                        );
                     }
                 }
                 return true;

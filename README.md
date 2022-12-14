@@ -6,7 +6,7 @@
 
 ![PHPStan](https://github.com/DominicWatts/CustomImport/workflows/PHPStan/badge.svg)
 
-Quick custom import to take SKU and price - using built-in Magento 2 import logic 
+Quick custom import to take SKU, Store ID and price - using built-in Magento 2 import logic 
 
 Check `./supplied` data
 
@@ -20,6 +20,6 @@ Check `./supplied` data
 
 System | Import
 
-Entity Type: Xigen Price Import
+Entity Type: Pixie Price Import
 
 Choose either Add / Update or Replace behavior - this is the same behavior. Delete has no affect.
